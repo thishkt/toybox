@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HKT日曆</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', '微軟正黑體', 'STHeiti', '華文黑體', serif;
+            background-color: #f4e9d9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #app {
+            background-color: #f9f3e7;
+            border: 8px double #8b4513;
+            width: 90vw;
+            max-width: 400px;
+            aspect-ratio: 9 / 16;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+        .calendar-header {
+            background-color: #8b4513;
+            color: #f9f3e7;
+            padding: 10px;
+            font-size: 1.5em;
+            text-align: center;
+            border-bottom: 2px solid #5e2c0d;
+        }
+        .date-display {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+        .gregorian-date {
+            font-size: 3em;
+            font-weight: bold;
+            color: #8b4513;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .lunar-date {
+            font-size: 1.8em;
+            color: #5e2c0d;
+            margin-bottom: 10px;
+        }
+        .day-of-week {
+            font-size: 1.5em;
+            color: #8b4513;
+            border-top: 2px solid #8b4513;
+            border-bottom: 2px solid #8b4513;
+            padding: 5px 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <date-display></date-display>
+    </div>
+
+    <script>
+        const DateDisplay = {
+            template: `
+                <div class="calendar">
+                    <div class="calendar-header">HKT日曆</div>
+                    <div class="date-display">
+                        <div class="gregorian-date">{{ gregorianDate }}</div>
+                        <div class="lunar-date">{{ lunarDate }}</div>
+                        <div class="day-of-week">{{ dayOfWeek }}</div>
+                    </div>
+                </div>
+            `,
+            data() {
+                return {
+                    gregorianDate: '',
+                    lunarDate: '',
+                    dayOfWeek: ''
+                }
+            },
+            mounted() {
+                this.updateDates()
+                setInterval(this.updateDates, 60000)
+            },
+            methods: {
+                updateDates() {
+                    const now = new Date()
+                    const lunar = Lunar.fromDate(now)
+                    
+                    this.gregorianDate = now.toLocaleDateString('zh-TW', {
+                        month: 'long',
+                        day: 'numeric'
+                    })
+                    
+                    this.lunarDate = `農曆 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`
+                    
+                    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+                    this.dayOfWeek = weekdays[now.getDay()]
+                }
+            }
+        }
+
+        const app = Vue.createApp({
+            components: {
+                'date-display': DateDisplay
+            }
+        })
+
+        app.mount('#app')
+    </script>
+</body>
+</html>

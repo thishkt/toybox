@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>匯率換算神器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #app {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .switch-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .switch-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>HKT匯率換算器</h1>
+        <div class="input-group">
+            <label for="exchangeRate">匯率 (1日圓兌換台幣)</label>
+            <input id="exchangeRate" v-model="exchangeRate" type="number" step="0.0001">
+        </div>
+        <div class="input-group">
+            <label>{{ isJPY ? '日圓金額' : '台幣金額' }}</label>
+            <input v-model="amount1" type="number" @input="updateAmount2">
+        </div>
+        <button class="switch-button" @click="switchCurrencies">
+            切換 {{ isJPY ? '日圓 ⇄ 台幣' : '台幣 ⇄ 日圓' }}
+        </button>
+        <div class="input-group">
+            <label>{{ isJPY ? '台幣金額' : '日圓金額' }}</label>
+            <input v-model="amount2" type="number" @input="updateAmount1">
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, watch } = Vue;
+
+        createApp({
+            setup() {
+                const exchangeRate = ref(0.2066);
+                const amount1 = ref(100);
+                const amount2 = ref((amount1.value * exchangeRate.value).toFixed(2));
+                const isJPY = ref(true);
+
+                const updateAmount2 = () => {
+                    if (isJPY.value) {
+                        amount2.value = (amount1.value * exchangeRate.value).toFixed(2);
+                    } else {
+                        amount2.value = (amount1.value / exchangeRate.value).toFixed(2);
+                    }
+                };
+
+                const updateAmount1 = () => {
+                    if (isJPY.value) {
+                        amount1.value = (amount2.value / exchangeRate.value).toFixed(2);
+                    } else {
+                        amount1.value = (amount2.value * exchangeRate.value).toFixed(2);
+                    }
+                };
+
+                const switchCurrencies = () => {
+                    isJPY.value = !isJPY.value;
+                    [amount1.value, amount2.value] = [amount2.value, amount1.value];
+                };
+
+                watch(exchangeRate, updateAmount2);
+
+                return {
+                    exchangeRate,
+                    amount1,
+                    amount2,
+                    isJPY,
+                    updateAmount1,
+                    updateAmount2,
+                    switchCurrencies
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
