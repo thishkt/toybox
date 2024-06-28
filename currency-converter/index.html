@@ -20,7 +20,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        h1 {
+        h4 {
             text-align: center;
             color: #333;
         }
@@ -58,21 +58,21 @@
 </head>
 <body>
     <div id="app">
-        <h1>HKT匯率換算器</h1>
+        <h4>HKT匯率換算器</h4>
         <div class="input-group">
             <label for="exchangeRate">匯率 (1日圓兌換台幣)</label>
-            <input id="exchangeRate" v-model="exchangeRate" type="number" step="0.0001">
+            <input id="exchangeRate" v-model="exchangeRate" type="number" step="0.0001" style="font-size: 50px;">
         </div>
         <div class="input-group">
             <label>{{ isJPY ? '日圓金額' : '台幣金額' }}</label>
-            <input v-model="amount1" type="number" @input="updateAmount2">
+            <input v-model="amount1" type="number" @input="updateAmount2" style="font-size: 100px;">
         </div>
         <button class="switch-button" @click="switchCurrencies">
             切換 {{ isJPY ? '日圓 ⇄ 台幣' : '台幣 ⇄ 日圓' }}
         </button>
         <div class="input-group">
             <label>{{ isJPY ? '台幣金額' : '日圓金額' }}</label>
-            <input v-model="amount2" type="number" @input="updateAmount1">
+            <input v-model="amount2" type="number" @input="updateAmount1" style="font-size: 100px;">
         </div>
     </div>
 
