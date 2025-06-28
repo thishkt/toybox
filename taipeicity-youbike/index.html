@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouBike 2.0 即時資訊</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .station-card {
+            transition: all 0.3s ease;
+        }
+        
+        .station-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bike-available {
+            background-color: #e6f7e6;
+        }
+        
+        .dock-available {
+            background-color: #e6f2ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-800 mb-2">
+                <i class="fas fa-bicycle mr-2"></i>YouBike 2.0 即時資訊
+            </h1>
+            <p class="text-gray-600">台北市公共自行車即時可用車輛與空位數量</p>
+          
+        </header>
+
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center">
+                <span class="mr-2 text-sm font-medium">最後更新:</span>
+                <span id="update-time" class="text-sm text-gray-600">載入中...</span>
+            </div>
+            <button id="refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                <i class="fas fa-sync-alt mr-2"></i>刷新資料
+            </button>
+        </div>
+
+        <div id="loading" class="loading-spinner"></div>
+
+        <div id="stations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 hidden">
+            <!-- Station cards will be inserted here by JavaScript -->
+        </div>
+
+        <div id="error-message" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6">
+            <p id="error-text"></p>
+        </div>
+
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>資料來源: 臺北市公共自行車即時資訊介接網址</p>
+            <p class="mt-1">© 2025 HKT線上教室</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiUrl = 'https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json';
+            const targetStations = ['500101123','500101134','500101135', '500101136'];
+            
+            const stationsContainer = document.getElementById('stations-container');
+            const loadingElement = document.getElementById('loading');
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const updateTimeElement = document.getElementById('update-time');
+            const refreshBtn = document.getElementById('refresh-btn');
+            
+            // Initial load
+            fetchData();
+            
+            // Set up refresh button
+            refreshBtn.addEventListener('click', fetchData);
+            
+            function fetchData() {
+                // Show loading, hide container and error
+                loadingElement.classList.remove('hidden');
+                stationsContainer.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                
+                // Add timestamp to URL to prevent caching
+                const timestamp = new Date().getTime();
+                const urlWithTimestamp = `${apiUrl}?t=${timestamp}`;
+                
+                fetch(urlWithTimestamp)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('網路請求失敗');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Process data
+                        const filteredStations = data.filter(station => 
+                            targetStations.includes(station.sno)
+                        );
+                        
+                        // Update UI
+                        updateStationsDisplay(filteredStations);
+                        updateTimeElement.textContent = formatTime(new Date());
+                        
+                        // Hide loading, show container
+                        loadingElement.classList.add('hidden');
+                        stationsContainer.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        errorText.textContent = `無法取得資料: ${error.message}`;
+                        errorMessage.classList.remove('hidden');
+                        loadingElement.classList.add('hidden');
+                    });
+            }
+            
+            function updateStationsDisplay(stations) {
+                stationsContainer.innerHTML = '';
+                
+                if (stations.length === 0) {
+                    stationsContainer.innerHTML = `
+                        <div class="col-span-full text-center py-8">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
+                            <p class="text-xl font-medium">找不到指定的站點資料</p>
+                            <p class="text-gray-600 mt-2">請確認站點代號是否正確</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                stations.forEach(station => {
+                    const stationCard = document.createElement('div');
+                    stationCard.className = 'station-card bg-white rounded-lg shadow-md overflow-hidden';
+                    
+                    stationCard.innerHTML = `
+                        <div class="bg-white px-4 py-2 border-b">
+                            <div class="font-semibold text-gray-700">${station.sna.replace('YouBike2.0_', '')}</div>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bike-available p-3 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-bicycle text-blue-600 text-xl mr-3"></i>
+                                        <div>
+                                            <div class="text-sm text-gray-600">可借車輛</div>
+                                            <div class="text-2xl font-bold ${station.available_rent_bikes === 0 ? 'text-red-600' : 'text-blue-600'}">${station.available_rent_bikes}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="dock-available p-3 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-parking text-green-600 text-xl mr-3"></i>
+                                        <div>
+                                            <div class="text-sm text-gray-600">可還空位</div>
+                                            <div class="text-2xl font-bold ${station.available_return_bikes === 0 ? 'text-red-600' : 'text-green-600'}">${station.available_return_bikes}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    stationsContainer.appendChild(stationCard);
+                });
+            }
+            
+            function formatTime(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+        });
+    </script>
+</body>
+</html>
